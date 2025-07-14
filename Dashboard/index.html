@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CONTROLL</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    body {
+      height: 100vh;
+      background: url('https://files.catbox.moe/ytd2s9.jpeg') no-repeat center center fixed;
+      background-size: cover;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .rain {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    .drop {
+      position: absolute;
+      width: 2px;
+      height: 20px;
+      background: rgba(255, 255, 255, 0.3);
+      animation: drop 0.6s linear infinite;
+    }
+
+    @keyframes drop {
+      0% { top: -20px; opacity: 0; }
+      30% { opacity: 1; }
+      100% { top: 100%; opacity: 0; }
+    }
+
+    .lightning {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: white;
+      opacity: 0;
+      z-index: 2;
+      animation: flash 10s infinite;
+    }
+
+    @keyframes flash {
+      0%, 97%, 100% { opacity: 0; }
+      98% { opacity: 0.6; }
+      99% { opacity: 0; }
+    }
+
+    .container {
+      position: relative;
+      z-index: 3;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(15px);
+      border-radius: 16px;
+      padding: 30px;
+      width: 90%;
+      max-width: 800px;
+      box-shadow: 0 0 30px rgba(0, 0, 0, 0.3);
+      color: white;
+    }
+
+    h2 {
+      text-align: center;
+      color: #fff;
+      margin-bottom: 30px;
+      font-weight: bold;
+    }
+
+    .logs {
+      max-height: 400px;
+      overflow-y: auto;
+      margin-top: 20px;
+    }
+
+    .log-entry {
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(10px);
+      border-left: 4px solid #00ccff;
+      padding: 15px;
+      margin-bottom: 15px;
+      border-radius: 12px;
+      color: #fff;
+    }
+
+    .log-entry strong {
+      color: #00ccff;
+    }
+
+    .refresh-btn {
+      margin-top: 10px;
+      padding: 12px;
+      width: 100%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(10px);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s, transform 0.2s;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(255, 255, 255, 0.2);
+      transform: scale(1.02);
+    }
+
+    .bg-setting {
+      margin-bottom: 20px;
+    }
+
+    .bg-setting input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border-radius: 8px;
+      border: none;
+      outline: none;
+      background: rgba(255, 255, 255, 0.15);
+      color: white;
+      backdrop-filter: blur(5px);
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 14px 24px;
+      border-radius: 12px;
+      backdrop-filter: blur(10px);
+      font-weight: 500;
+      z-index: 9999;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.4s ease;
+    }
+
+    .toast.show {
+      opacity: 1;
+      bottom: 60px;
+      pointer-events: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="rain" id="rain"></div>
+  <div class="lightning"></div>
+
+  <div class="container">
+    <h2>CONTROLL</h2>
+
+    <!-- Ganti Background -->
+    <div class="bg-setting">
+      <label for="bgInput">Masukan Link:</label>
+      <input type="text" id="bgInput" placeholder="Masukkan URL gambar...">
+      <button class="refresh-btn" onclick="setUserBackground()">Set Background</button>
+    </div>
+
+    <button class="refresh-btn" onclick="loadLogs()">🔄 Refresh Log</button>
+
+    <div class="logs" id="logContainer">
+      <!-- Log user akan ditampilkan di sini -->
+    </div>
+  </div>
+
+  <!-- Toast Box -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    function loadLogs() {
+      const logContainer = document.getElementById("logContainer");
+      logContainer.innerHTML = "";
+
+      const logs = JSON.parse(localStorage.getItem("methodLogs") || "[]").reverse();
+      if (logs.length === 0) {
+        logContainer.innerHTML = "<p>Tidak ada log method ditemukan.</p>";
+        return;
+      }
+
+      logs.forEach(log => {
+        const entry = document.createElement("div");
+        entry.classList.add("log-entry");
+
+        entry.innerHTML = `
+          <p><strong>Type:</strong> ${log.type}</p>
+          <p><strong>Nomor:</strong> ${log.nomor}</p>
+          <p><strong>Link:</strong> ${log.link}</p>
+          <p><strong>Waktu:</strong> ${new Date(log.time).toLocaleString()}</p>
+        `;
+        logContainer.appendChild(entry);
+      });
+    }
+
+    function setUserBackground() {
+      const url = document.getElementById("bgInput").value.trim();
+      if (!url.startsWith("http")) {
+        showToast("Invalid");
+        return;
+      }
+      localStorage.setItem("userBackground", url);
+      showToast("SuccesFully");
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      toast.textContent = message;
+      toast.classList.add("show");
+      setTimeout(() => {
+        toast.classList.remove("show");
+      }, 3000);
+    }
+
+    loadLogs();
+
+    // Efek hujan
+    const rainContainer = document.getElementById("rain");
+    for (let i = 0; i < 100; i++) {
+      const drop = document.createElement("div");
+      drop.classList.add("drop");
+      drop.style.left = Math.random() * 100 + "vw";
+      drop.style.animationDuration = 0.3 + Math.random() * 0.5 + "s";
+      drop.style.animationDelay = Math.random() * 5 + "s";
+      rainContainer.appendChild(drop);
+    }
+  </script>
+</body>
+</html>
